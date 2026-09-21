@@ -1,12 +1,13 @@
 'use client';
 
-import { FormEvent, PointerEvent, useMemo, useRef, useState } from 'react';
+import { FormEvent, PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bookmark,
   Check,
   ChevronLeft,
   ChevronRight,
   Compass,
+  Eye,
   Heart,
   ImagePlus,
   Map,
@@ -49,6 +50,7 @@ type Look = {
   placeNote: string;
   placeRating: number;
   pins: number;
+  views: number;
   accent: string;
   comments: { name: string; text: string; avatar?: string }[];
 };
@@ -76,6 +78,7 @@ const INITIAL_LOOKS: Look[] = [
     placeNote: 'Cobblestone, cast-iron façades, best after 4pm.',
     placeRating: 4.7,
     pins: 82,
+    views: 1280,
     accent: '#d8ff4f',
     comments: [
       {
@@ -113,6 +116,7 @@ const INITIAL_LOOKS: Look[] = [
     placeNote: 'Warm brick, shopfront color, lively weekend foot traffic.',
     placeRating: 4.4,
     pins: 61,
+    views: 986,
     accent: '#ff8fa7',
     comments: [
       { name: 'Aria', text: 'The proportions are so good.' },
@@ -140,6 +144,7 @@ const INITIAL_LOOKS: Look[] = [
     placeNote: 'Leafy light, textured walls, calmest around midday.',
     placeRating: 4.9,
     pins: 109,
+    views: 1734,
     accent: '#8bd3ff',
     comments: [
       { name: 'Leila', text: 'The light here is unreal.' },
@@ -167,6 +172,7 @@ const INITIAL_LOOKS: Look[] = [
     placeNote: 'Graphic brick canyon and bridge views before the crowds.',
     placeRating: 4.6,
     pins: 146,
+    views: 642,
     accent: '#ffb65b',
     comments: [
       { name: 'Mina', text: 'This silhouette is everything.' },
@@ -199,10 +205,21 @@ export default function Home() {
   const [isFlipped, setIsFlipped] = useState(false);
   const dragStart = useRef<number | null>(null);
   const lastTouchTap = useRef(0);
+  const viewedLookIds = useRef<Set<number>>(new Set());
 
   const look = looks[currentIndex % looks.length];
   const nextLook = looks[(currentIndex + 1) % looks.length];
   const remaining = Math.max(looks.length - (currentIndex % looks.length) - 1, 0);
+
+  useEffect(() => {
+    const viewedId = looks[currentIndex % looks.length]?.id;
+    if (!viewedId || viewedLookIds.current.has(viewedId)) return;
+
+    viewedLookIds.current.add(viewedId);
+    setLooks((items) =>
+      items.map((item) => (item.id === viewedId ? { ...item, views: item.views + 1 } : item)),
+    );
+  }, [currentIndex, looks.length]);
 
   const notify = (message: string) => {
     setToast(message);
@@ -310,6 +327,7 @@ export default function Home() {
       placeNote: 'A fresh style spot, added by you.',
       placeRating: locationRating || 5,
       pins: 1,
+      views: 0,
       accent: '#d8ff4f',
       comments: [],
     };
@@ -570,6 +588,13 @@ export default function Home() {
                       <MapPin className="size-3.5 text-primary" />
                       {look.location}, {look.area}
                     </button>
+                    <span
+                      aria-label={`${look.views} views`}
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1.5 text-[10px] font-bold text-white/90 backdrop-blur-md"
+                    >
+                      <Eye className="size-3.5" />
+                      {formatViewCount(look.views)} views
+                    </span>
                       </div>
                     </div>
 
@@ -867,6 +892,13 @@ export default function Home() {
       )}
     </main>
   );
+}
+
+function formatViewCount(value: number) {
+  return new Intl.NumberFormat('en', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
 function MapSurface({
