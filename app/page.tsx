@@ -352,7 +352,7 @@ export default function Home() {
         label: 'Profile',
         icon: UserRound,
         active: false,
-        onClick: () => notify('Your profile is looking sharp'),
+        onClick: () => window.location.assign('/signup'),
       },
     ],
     [mode, saved.length],
@@ -388,13 +388,15 @@ export default function Home() {
             >
               <Search className="size-[18px]" />
             </Button>
-            <Avatar className="size-9 ring-2 ring-background">
-              <AvatarImage
-                alt="Your profile"
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80"
-              />
-              <AvatarFallback>YS</AvatarFallback>
-            </Avatar>
+            <button aria-label="Create your account" onClick={() => window.location.assign('/signup')}>
+              <Avatar className="size-9 ring-2 ring-background">
+                <AvatarImage
+                  alt="Your profile"
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80"
+                />
+                <AvatarFallback>YS</AvatarFallback>
+              </Avatar>
+            </button>
           </div>
         </div>
       </header>
