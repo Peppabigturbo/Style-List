@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
@@ -394,7 +393,12 @@ function CheckRow({
   return (
     <div>
       <label className="flex cursor-pointer items-start gap-3">
-        <Checkbox checked={checked} className="mt-0.5" onCheckedChange={onCheckedChange} />
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(event) => onCheckedChange(event.target.checked)}
+          className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-border accent-primary"
+        />
         <span>
           <span className="block text-sm font-bold">{label}</span>
           <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{description}</span>
