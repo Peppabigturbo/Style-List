@@ -590,10 +590,10 @@ export default function Home() {
                     </button>
                     <span
                       aria-label={`${look.views} views`}
-                      className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1.5 text-[10px] font-bold text-white/90 backdrop-blur-md"
+                      className="mt-2.5 inline-flex items-center gap-1 rounded-full bg-black/30 px-2 py-1 text-[9px] font-bold text-white/75 backdrop-blur-sm"
                     >
-                      <Eye className="size-3.5" />
-                      {formatViewCount(look.views)} views
+                      <Eye className="size-3" />
+                      {formatViewCount(look.views)}
                     </span>
                       </div>
                     </div>
