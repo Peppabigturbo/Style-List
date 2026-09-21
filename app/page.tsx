@@ -15,6 +15,7 @@ import {
   Plus,
   Search,
   Send,
+  Shirt,
   Sparkles,
   Star,
   UserRound,
@@ -41,6 +42,7 @@ type Look = {
   avatar: string;
   image: string;
   caption: string;
+  outfit: string[];
   area: string;
   location: string;
   distance: string;
@@ -61,6 +63,13 @@ const INITIAL_LOOKS: Look[] = [
     image:
       'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=88',
     caption: 'Red leather, grey skies. The city understood the assignment.',
+    outfit: [
+      'Vintage moto jacket — Depop find',
+      'Ribbed tank — COS',
+      'Wide-leg trousers — Aritzia',
+      'Square-toe boots — Vagabond',
+      'Mini shoulder bag — BY FAR',
+    ],
     area: 'SoHo',
     location: 'Prince & Mercer',
     distance: '0.3 mi',
@@ -92,6 +101,12 @@ const INITIAL_LOOKS: Look[] = [
     image:
       'https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1200&q=88',
     caption: 'Soft tailoring and a little Lower East Side attitude.',
+    outfit: [
+      'Relaxed blazer — Frankie Shop',
+      'Silk slip dress — Réalisation Par',
+      'Sculptural earrings — Completedworks',
+      'Kitten-heel slingbacks — Reformation',
+    ],
     area: 'Lower East Side',
     location: 'Orchard & Rivington',
     distance: '0.8 mi',
@@ -113,6 +128,12 @@ const INITIAL_LOOKS: Look[] = [
     image:
       'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1200&q=88',
     caption: 'A quiet look for a very loud block.',
+    outfit: [
+      'Boxy poplin shirt — Studio Nicholson',
+      'Pleated trousers — Tibi',
+      'Leather loafers — G.H. Bass',
+      'Silver cuff — Vintage',
+    ],
     area: 'Nolita',
     location: 'Elizabeth Street Garden',
     distance: '1.1 mi',
@@ -134,6 +155,12 @@ const INITIAL_LOOKS: Look[] = [
     image:
       'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=1200&q=88',
     caption: 'Monochrome, but never one-note.',
+    outfit: [
+      'Wool overcoat — Our Legacy',
+      'Mock-neck knit — Uniqlo U',
+      'Relaxed trousers — Lemaire',
+      'Derby shoes — Dr. Martens',
+    ],
     area: 'DUMBO',
     location: 'Washington & Water',
     distance: '2.4 mi',
@@ -169,7 +196,9 @@ export default function Home() {
   const [locationRating, setLocationRating] = useState(0);
   const [toast, setToast] = useState('');
   const [postImage, setPostImage] = useState<File | null>(null);
+  const [isFlipped, setIsFlipped] = useState(false);
   const dragStart = useRef<number | null>(null);
+  const lastTouchTap = useRef(0);
 
   const look = looks[currentIndex % looks.length];
   const nextLook = looks[(currentIndex + 1) % looks.length];
@@ -184,6 +213,7 @@ export default function Home() {
     if (message) notify(message);
     setDragX(0);
     setRating(null);
+    setIsFlipped(false);
     setCurrentIndex((index) => (index + 1) % looks.length);
     setLocationRating(0);
   };
@@ -194,19 +224,34 @@ export default function Home() {
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
+    if ((event.target as HTMLElement).closest('button, input, textarea, label')) {
+      dragStart.current = null;
+      return;
+    }
     dragStart.current = event.clientX;
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
-    if (dragStart.current === null) return;
+    if (dragStart.current === null || isFlipped) return;
     setDragX(Math.max(-170, Math.min(170, event.clientX - dragStart.current)));
   };
 
-  const handlePointerUp = () => {
-    if (dragX < -85) {
+  const handlePointerUp = (event: PointerEvent<HTMLElement>) => {
+    if (dragStart.current === null) return;
+
+    if (event.pointerType === 'touch' && Math.abs(dragX) < 12) {
+      const now = Date.now();
+      if (now - lastTouchTap.current < 320) {
+        setIsFlipped((value) => !value);
+        lastTouchTap.current = 0;
+      } else {
+        lastTouchTap.current = now;
+      }
+      setDragX(0);
+    } else if (!isFlipped && dragX < -85) {
       advance('Passed — showing the next look');
-    } else if (dragX > 85) {
+    } else if (!isFlipped && dragX > 85) {
       rateLook(5);
     } else {
       setDragX(0);
@@ -253,6 +298,12 @@ export default function Home() {
         ? URL.createObjectURL(postImage)
         : 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=88',
       caption,
+      outfit: [
+        'Statement outer layer — add the label',
+        'Main piece — add the label',
+        'Shoes — add the label',
+        'Accessories — add the label',
+      ],
       area: location.split(',')[0],
       location,
       distance: 'Your pin',
@@ -273,6 +324,7 @@ export default function Home() {
 
   const selectMapLook = (index: number) => {
     setCurrentIndex(index);
+    setIsFlipped(false);
     setLocationRating(0);
   };
 
@@ -421,25 +473,50 @@ export default function Home() {
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
+                onDoubleClick={(event) => {
+                  if ((event.target as HTMLElement).closest('button')) return;
+                  setIsFlipped((value) => !value);
+                }}
                 style={{
                   transform: `translateX(${dragX}px) rotate(${dragX / 24}deg)`,
                 }}
               >
-                <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
-                  <img
-                    alt={`${look.author}'s street-style look in ${look.area}`}
-                    className="pointer-events-none h-full w-full object-cover"
-                    draggable={false}
-                    src={look.image}
-                  />
-                  <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+                <div
+                  aria-label={isFlipped ? 'Outfit details. Double tap to show photo.' : 'Look photo. Double tap for outfit details.'}
+                  className="relative aspect-[4/5] overflow-hidden bg-secondary [perspective:1400px]"
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setIsFlipped((value) => !value);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div
+                    className={`relative h-full w-full transition-transform duration-700 [transform-style:preserve-3d] ${
+                      isFlipped ? '[transform:rotateY(180deg)]' : ''
+                    }`}
+                  >
+                    <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]">
+                      <img
+                        alt={`${look.author}'s street-style look in ${look.area}`}
+                        className="pointer-events-none h-full w-full object-cover"
+                        draggable={false}
+                        src={look.image}
+                      />
+                      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
 
-                  <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/45 px-3 py-2 text-xs font-bold text-white backdrop-blur-md">
-                    <span className="size-1.5 rounded-full bg-primary" />
-                    {look.distance} away
-                  </div>
+                      <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/45 px-3 py-2 text-xs font-bold text-white backdrop-blur-md">
+                        <span className="size-1.5 rounded-full bg-primary" />
+                        {look.distance} away
+                      </div>
 
-                  <div className="absolute right-4 top-4 flex gap-2">
+                      <span className="absolute left-4 top-16 rounded-full bg-black/45 px-3 py-2 text-[10px] font-bold text-white/90 backdrop-blur-md">
+                        Double tap for outfit details
+                      </span>
+
+                      <div className="absolute right-4 top-4 flex gap-2">
                     <button
                       aria-label="Open comments"
                       className="flex size-10 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md transition-transform hover:scale-105"
@@ -456,9 +533,9 @@ export default function Home() {
                     >
                       <Bookmark className={`size-[18px] ${saved.includes(look.id) ? 'fill-current' : ''}`} />
                     </button>
-                  </div>
+                      </div>
 
-                  {Math.abs(dragX) > 35 && (
+                      {Math.abs(dragX) > 35 && (
                     <div
                       className={`absolute top-24 rounded-xl border-4 px-4 py-2 font-display text-2xl font-black uppercase tracking-wider ${
                         dragX > 0
@@ -468,9 +545,9 @@ export default function Home() {
                     >
                       {dragX > 0 ? 'Love' : 'Pass'}
                     </div>
-                  )}
+                      )}
 
-                  <div className="absolute inset-x-5 bottom-5 text-white">
+                      <div className="absolute inset-x-5 bottom-5 text-white">
                     <div className="mb-3 flex items-center gap-2">
                       <Avatar className="size-8 border-2 border-white/50">
                         <AvatarImage alt={look.author} src={look.avatar} />
@@ -491,6 +568,48 @@ export default function Home() {
                       <MapPin className="size-3.5 text-primary" />
                       {look.location}, {look.area}
                     </button>
+                      </div>
+                    </div>
+
+                    <div className="absolute inset-0 grid bg-card [backface-visibility:hidden] [transform:rotateY(180deg)] sm:grid-cols-[1.08fr_.92fr]">
+                      <div className="flex flex-col p-6 sm:p-8">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                          <Shirt className="size-4" /> Outfit details
+                        </div>
+                        <h2 className="mt-3 font-display text-2xl font-black tracking-[-0.04em] sm:text-3xl">
+                          Get the look.
+                        </h2>
+                        <ul className="mt-6 space-y-3">
+                          {look.outfit.map((item) => (
+                            <li className="flex gap-3 text-sm leading-relaxed" key={item}>
+                              <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-auto hidden items-center gap-2 pt-5 text-[10px] font-bold text-muted-foreground sm:flex">
+                          <span className="flex size-6 items-center justify-center rounded-full border border-border">↺</span>
+                          Double tap to return to the photo
+                        </div>
+                      </div>
+
+                      <div className="relative min-h-44 overflow-hidden border-t border-border bg-[#e6e4dc] sm:border-l sm:border-t-0">
+                        <div className="map-grid absolute inset-0 opacity-75" />
+                        <div className="absolute left-[35%] top-0 h-full w-[10px] -rotate-[18deg] bg-background/90" />
+                        <div className="absolute left-0 top-[52%] h-[9px] w-full rotate-[8deg] bg-background/90" />
+                        <div className="absolute left-1/2 top-[42%] flex -translate-x-1/2 -translate-y-1/2 items-center justify-center">
+                          <span className="absolute size-14 rounded-full bg-primary/20" />
+                          <span className="relative flex size-10 items-center justify-center rounded-full border-[3px] border-white bg-foreground text-[11px] font-black text-background shadow-lg">
+                            {look.placeRating.toFixed(1)}
+                          </span>
+                        </div>
+                        <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-card/95 p-3 shadow-lg backdrop-blur">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Shot here</p>
+                          <p className="mt-1 text-sm font-black">{look.location}</p>
+                          <p className="text-[11px] text-muted-foreground">{look.area} · {look.pins} style pins</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -532,7 +651,7 @@ export default function Home() {
                     </button>
                   </div>
                   <p className="mt-3 text-center text-[11px] font-medium text-muted-foreground">
-                    Swipe to pass or love · tap stars to rate
+                    Swipe to pass or love · double tap photo for outfit details
                   </p>
                 </div>
               </article>
