@@ -349,10 +349,10 @@ export default function Home() {
         onClick: () => notify(`${saved.length} saved look${saved.length === 1 ? '' : 's'}`),
       },
       {
-        label: 'Profile',
+        label: 'Account',
         icon: UserRound,
         active: false,
-        onClick: () => window.location.assign('/signup'),
+        onClick: () => window.location.assign('/account'),
       },
     ],
     [mode, saved.length],
@@ -388,7 +388,7 @@ export default function Home() {
             >
               <Search className="size-[18px]" />
             </Button>
-            <button aria-label="Create your account" onClick={() => window.location.assign('/signup')}>
+            <button aria-label="Open your account" onClick={() => window.location.assign('/account')}>
               <Avatar className="size-9 ring-2 ring-background">
                 <AvatarImage
                   alt="Your profile"

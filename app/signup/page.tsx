@@ -47,7 +47,22 @@ const countries = [
   'Other',
 ];
 
-type FormErrors = Partial<Record<'email' | 'username' | 'password' | 'confirmPassword' | 'birthDate' | 'terms', string>>;
+type FormErrors = Partial<
+  Record<
+    | 'email'
+    | 'username'
+    | 'password'
+    | 'confirmPassword'
+    | 'birthDate'
+    | 'firstName'
+    | 'lastName'
+    | 'city'
+    | 'state'
+    | 'country'
+    | 'terms',
+    string
+  >
+>;
 
 export default function SignupPage() {
   const [password, setPassword] = useState('');
@@ -84,6 +99,11 @@ export default function SignupPage() {
     const email = String(data.get('email') || '').trim();
     const username = String(data.get('username') || '').trim();
     const birthDate = String(data.get('birthDate') || '');
+    const firstName = String(data.get('firstName') || '').trim();
+    const lastName = String(data.get('lastName') || '').trim();
+    const city = String(data.get('city') || '').trim();
+    const state = String(data.get('state') || '').trim();
+    const country = String(data.get('country') || '').trim();
 
     if (!/^\S+@\S+\.\S+$/.test(email)) nextErrors.email = 'Enter a valid email address.';
     if (!/^[a-zA-Z0-9._]{3,20}$/.test(username)) {
@@ -94,12 +114,38 @@ export default function SignupPage() {
     }
     if (password !== confirmPassword) nextErrors.confirmPassword = 'The passwords do not match.';
     if (!birthDate) nextErrors.birthDate = 'Enter your date of birth.';
+    if (!firstName) nextErrors.firstName = 'Enter your first name.';
+    if (!lastName) nextErrors.lastName = 'Enter your last name.';
+    if (!city) nextErrors.city = 'Enter your city.';
+    if (!state) nextErrors.state = 'Enter your state or province.';
+    if (!country) nextErrors.country = 'Select your country.';
     if (!termsAccepted) nextErrors.terms = 'You must agree before creating an account.';
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
-    setCreatedName(String(data.get('firstName') || username));
+    try {
+      window.localStorage.setItem(
+        'stylelist.accountProfile',
+        JSON.stringify({
+          email,
+          username,
+          firstName,
+          lastName,
+          city,
+          state,
+          country,
+          interests,
+          discoverable,
+          updatesAccepted,
+          createdAt: new Date().toISOString(),
+        }),
+      );
+    } catch {
+      // Account details remain available for this session if browser storage is unavailable.
+    }
+
+    setCreatedName(firstName || username);
     setComplete(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -117,8 +163,8 @@ export default function SignupPage() {
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
               Your profile is ready. Start rating looks, saving inspiration, and pinning your own style to the map.
             </p>
-            <Button className="mt-8 h-12 rounded-full px-7 font-black" onClick={() => window.location.assign('/')}>
-              Start exploring <Sparkles className="size-4" />
+            <Button className="mt-8 h-12 rounded-full px-7 font-black" onClick={() => window.location.assign('/account')}>
+              Open my account <Sparkles className="size-4" />
             </Button>
           </div>
         </section>
@@ -253,23 +299,23 @@ export default function SignupPage() {
                   About you
                 </legend>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="First name" htmlFor="firstName">
-                    <Input className="h-11 rounded-xl" id="firstName" name="firstName" placeholder="First name" required />
+                  <Field label="First name" error={errors.firstName} htmlFor="firstName">
+                    <Input aria-invalid={Boolean(errors.firstName)} className="h-11 rounded-xl" id="firstName" name="firstName" placeholder="First name" required />
                   </Field>
-                  <Field label="Last name" htmlFor="lastName">
-                    <Input className="h-11 rounded-xl" id="lastName" name="lastName" placeholder="Last name" required />
+                  <Field label="Last name" error={errors.lastName} htmlFor="lastName">
+                    <Input aria-invalid={Boolean(errors.lastName)} className="h-11 rounded-xl" id="lastName" name="lastName" placeholder="Last name" required />
                   </Field>
                   <Field label="Date of birth" error={errors.birthDate} hint="Used for age eligibility" htmlFor="birthDate">
                     <Input aria-invalid={Boolean(errors.birthDate)} className="h-11 rounded-xl" id="birthDate" name="birthDate" type="date" />
                   </Field>
-                  <Field label="City" htmlFor="city">
-                    <Input className="h-11 rounded-xl" id="city" name="city" placeholder="New York" required />
+                  <Field label="City" error={errors.city} htmlFor="city">
+                    <Input aria-invalid={Boolean(errors.city)} className="h-11 rounded-xl" id="city" name="city" placeholder="New York" required />
                   </Field>
-                  <Field label="State / province" htmlFor="state">
-                    <Input className="h-11 rounded-xl" id="state" name="state" placeholder="New York" required />
+                  <Field label="State / province" error={errors.state} htmlFor="state">
+                    <Input aria-invalid={Boolean(errors.state)} className="h-11 rounded-xl" id="state" name="state" placeholder="New York" required />
                   </Field>
-                  <Field label="Country" htmlFor="country">
-                    <NativeSelect className="w-full" id="country" name="country" required>
+                  <Field label="Country" error={errors.country} htmlFor="country">
+                    <NativeSelect aria-invalid={Boolean(errors.country)} className="w-full" id="country" name="country" required>
                       <NativeSelectOption value="">Select your country</NativeSelectOption>
                       {countries.map((country) => (
                         <NativeSelectOption key={country} value={country}>{country}</NativeSelectOption>
