@@ -1,6 +1,13 @@
 'use client';
 
-import { FormEvent, PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  FormEvent,
+  PointerEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Bookmark,
   Check,
@@ -20,6 +27,7 @@ import {
   Sparkles,
   Star,
   UserRound,
+  UsersRound,
   X,
 } from 'lucide-react';
 
@@ -209,7 +217,10 @@ export default function Home() {
 
   const look = looks[currentIndex % looks.length];
   const nextLook = looks[(currentIndex + 1) % looks.length];
-  const remaining = Math.max(looks.length - (currentIndex % looks.length) - 1, 0);
+  const remaining = Math.max(
+    looks.length - (currentIndex % looks.length) - 1,
+    0,
+  );
 
   useEffect(() => {
     const viewedId = looks[currentIndex % looks.length]?.id;
@@ -217,7 +228,9 @@ export default function Home() {
 
     viewedLookIds.current.add(viewedId);
     setLooks((items) =>
-      items.map((item) => (item.id === viewedId ? { ...item, views: item.views + 1 } : item)),
+      items.map((item) =>
+        item.id === viewedId ? { ...item, views: item.views + 1 } : item,
+      ),
     );
   }, [currentIndex, looks.length]);
 
@@ -241,7 +254,9 @@ export default function Home() {
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
-    if ((event.target as HTMLElement).closest('button, input, textarea, label')) {
+    if (
+      (event.target as HTMLElement).closest('button, input, textarea, label')
+    ) {
       dragStart.current = null;
       return;
     }
@@ -278,9 +293,15 @@ export default function Home() {
 
   const toggleSaved = () => {
     setSaved((items) =>
-      items.includes(look.id) ? items.filter((id) => id !== look.id) : [...items, look.id],
+      items.includes(look.id)
+        ? items.filter((id) => id !== look.id)
+        : [...items, look.id],
     );
-    notify(saved.includes(look.id) ? 'Removed from saved' : 'Saved to your style list');
+    notify(
+      saved.includes(look.id)
+        ? 'Removed from saved'
+        : 'Saved to your style list',
+    );
   };
 
   const addComment = (event: FormEvent) => {
@@ -291,7 +312,10 @@ export default function Home() {
         item.id === look.id
           ? {
               ...item,
-              comments: [...item.comments, { name: 'You', text: commentText.trim() }],
+              comments: [
+                ...item.comments,
+                { name: 'You', text: commentText.trim() },
+              ],
             }
           : item,
       ),
@@ -361,10 +385,17 @@ export default function Home() {
         onClick: () => setMode('map' as const),
       },
       {
+        label: 'People',
+        icon: UsersRound,
+        active: false,
+        onClick: () => window.location.assign('/people'),
+      },
+      {
         label: 'Saved',
         icon: Bookmark,
         active: false,
-        onClick: () => notify(`${saved.length} saved look${saved.length === 1 ? '' : 's'}`),
+        onClick: () =>
+          notify(`${saved.length} saved look${saved.length === 1 ? '' : 's'}`),
       },
       {
         label: 'Account',
@@ -406,7 +437,10 @@ export default function Home() {
             >
               <Search className="size-[18px]" />
             </Button>
-            <button aria-label="Open your account" onClick={() => window.location.assign('/account')}>
+            <button
+              aria-label="Open your account"
+              onClick={() => window.location.assign('/account')}
+            >
               <Avatar className="size-9 ring-2 ring-background">
                 <AvatarImage
                   alt="Your profile"
@@ -502,7 +536,11 @@ export default function Home() {
                 }}
               >
                 <div
-                  aria-label={isFlipped ? 'Outfit details. Double tap to show photo.' : 'Look photo. Double tap for outfit details.'}
+                  aria-label={
+                    isFlipped
+                      ? 'Outfit details. Double tap to show photo.'
+                      : 'Look photo. Double tap for outfit details.'
+                  }
                   className="relative aspect-[4/5] overflow-hidden bg-secondary [perspective:1400px]"
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -537,64 +575,72 @@ export default function Home() {
                       </span>
 
                       <div className="absolute right-4 top-4 flex gap-2">
-                    <button
-                      aria-label="Open comments"
-                      className="flex size-10 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md transition-transform hover:scale-105"
-                      onClick={() => setCommentsOpen(true)}
-                    >
-                      <MessageCircle className="size-[18px]" />
-                    </button>
-                    <button
-                      aria-label="Save this look"
-                      className={`flex size-10 items-center justify-center rounded-full backdrop-blur-md transition-transform hover:scale-105 ${
-                        saved.includes(look.id) ? 'bg-primary text-primary-foreground' : 'bg-black/45 text-white'
-                      }`}
-                      onClick={toggleSaved}
-                    >
-                      <Bookmark className={`size-[18px] ${saved.includes(look.id) ? 'fill-current' : ''}`} />
-                    </button>
+                        <button
+                          aria-label="Open comments"
+                          className="flex size-10 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md transition-transform hover:scale-105"
+                          onClick={() => setCommentsOpen(true)}
+                        >
+                          <MessageCircle className="size-[18px]" />
+                        </button>
+                        <button
+                          aria-label="Save this look"
+                          className={`flex size-10 items-center justify-center rounded-full backdrop-blur-md transition-transform hover:scale-105 ${
+                            saved.includes(look.id)
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-black/45 text-white'
+                          }`}
+                          onClick={toggleSaved}
+                        >
+                          <Bookmark
+                            className={`size-[18px] ${saved.includes(look.id) ? 'fill-current' : ''}`}
+                          />
+                        </button>
                       </div>
 
                       {Math.abs(dragX) > 35 && (
-                    <div
-                      className={`absolute top-24 rounded-xl border-4 px-4 py-2 font-display text-2xl font-black uppercase tracking-wider ${
-                        dragX > 0
-                          ? 'left-7 rotate-[-8deg] border-primary text-primary'
-                          : 'right-7 rotate-[8deg] border-white text-white'
-                      }`}
-                    >
-                      {dragX > 0 ? 'Love' : 'Pass'}
-                    </div>
+                        <div
+                          className={`absolute top-24 rounded-xl border-4 px-4 py-2 font-display text-2xl font-black uppercase tracking-wider ${
+                            dragX > 0
+                              ? 'left-7 rotate-[-8deg] border-primary text-primary'
+                              : 'right-7 rotate-[8deg] border-white text-white'
+                          }`}
+                        >
+                          {dragX > 0 ? 'Love' : 'Pass'}
+                        </div>
                       )}
 
                       <div className="absolute inset-x-5 bottom-5 text-white">
-                    <div className="mb-3 flex items-center gap-2">
-                      <Avatar className="size-8 border-2 border-white/50">
-                        <AvatarImage alt={look.author} src={look.avatar} />
-                        <AvatarFallback>{look.author.slice(0, 2)}</AvatarFallback>
-                      </Avatar>
-                      <div className="leading-tight">
-                        <p className="text-sm font-bold">{look.author}</p>
-                        <p className="text-[11px] text-white/70">{look.handle} · 18m</p>
-                      </div>
-                    </div>
-                    <p className="font-display text-xl font-bold leading-snug tracking-tight sm:text-2xl">
-                      {look.caption}
-                    </p>
-                    <button
-                      className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-white/85"
-                      onClick={() => setMode('map')}
-                    >
-                      <MapPin className="size-3.5 text-primary" />
-                      {look.location}, {look.area}
-                    </button>
-                    <span
-                      aria-label={`${look.views} views`}
-                      className="mt-2.5 inline-flex items-center gap-1 rounded-full bg-black/30 px-2 py-1 text-[9px] font-bold text-white/75 backdrop-blur-sm"
-                    >
-                      <Eye className="size-3" />
-                      {formatViewCount(look.views)}
-                    </span>
+                        <div className="mb-3 flex items-center gap-2">
+                          <Avatar className="size-8 border-2 border-white/50">
+                            <AvatarImage alt={look.author} src={look.avatar} />
+                            <AvatarFallback>
+                              {look.author.slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="leading-tight">
+                            <p className="text-sm font-bold">{look.author}</p>
+                            <p className="text-[11px] text-white/70">
+                              {look.handle} · 18m
+                            </p>
+                          </div>
+                        </div>
+                        <p className="font-display text-xl font-bold leading-snug tracking-tight sm:text-2xl">
+                          {look.caption}
+                        </p>
+                        <button
+                          className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-white/85"
+                          onClick={() => setMode('map')}
+                        >
+                          <MapPin className="size-3.5 text-primary" />
+                          {look.location}, {look.area}
+                        </button>
+                        <span
+                          aria-label={`${look.views} views`}
+                          className="mt-2.5 inline-flex items-center gap-1 rounded-full bg-black/30 px-2 py-1 text-[9px] font-bold text-white/75 backdrop-blur-sm"
+                        >
+                          <Eye className="size-3" />
+                          {formatViewCount(look.views)}
+                        </span>
                       </div>
                     </div>
 
@@ -608,14 +654,19 @@ export default function Home() {
                         </h2>
                         <ul className="mt-6 space-y-3">
                           {look.outfit.map((item) => (
-                            <li className="flex gap-3 text-sm leading-relaxed" key={item}>
+                            <li
+                              className="flex gap-3 text-sm leading-relaxed"
+                              key={item}
+                            >
                               <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
                               <span>{item}</span>
                             </li>
                           ))}
                         </ul>
                         <div className="mt-auto hidden items-center gap-2 pt-5 text-[10px] font-bold text-muted-foreground sm:flex">
-                          <span className="flex size-6 items-center justify-center rounded-full border border-border">↺</span>
+                          <span className="flex size-6 items-center justify-center rounded-full border border-border">
+                            ↺
+                          </span>
                           Double tap to return to the photo
                         </div>
                       </div>
@@ -631,9 +682,15 @@ export default function Home() {
                           </span>
                         </div>
                         <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-card/95 p-3 shadow-lg backdrop-blur">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Shot here</p>
-                          <p className="mt-1 text-sm font-black">{look.location}</p>
-                          <p className="text-[11px] text-muted-foreground">{look.area} · {look.pins} style pins</p>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                            Shot here
+                          </p>
+                          <p className="mt-1 text-sm font-black">
+                            {look.location}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {look.area} · {look.pins} style pins
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -650,7 +707,10 @@ export default function Home() {
                       <X className="size-5" />
                     </button>
 
-                    <div className="flex flex-1 justify-center gap-1" aria-label="Rate this look">
+                    <div
+                      className="flex flex-1 justify-center gap-1"
+                      aria-label="Rate this look"
+                    >
                       {[1, 2, 3, 4, 5].map((value) => (
                         <button
                           key={value}
@@ -686,7 +746,11 @@ export default function Home() {
             </div>
           </section>
         ) : (
-          <MapSurface looks={looks} selectedIndex={currentIndex} onSelect={selectMapLook} />
+          <MapSurface
+            looks={looks}
+            selectedIndex={currentIndex}
+            onSelect={selectMapLook}
+          />
         )}
 
         <aside className="hidden lg:block">
@@ -719,7 +783,9 @@ export default function Home() {
             aria-label={label}
             onClick={onClick}
             className={`flex size-11 items-center justify-center rounded-2xl ${
-              active ? 'bg-primary text-primary-foreground' : 'text-background/65'
+              active
+                ? 'bg-primary text-primary-foreground'
+                : 'text-background/65'
             }`}
           >
             <Icon className="size-5" />
@@ -736,20 +802,28 @@ export default function Home() {
       <Dialog open={commentsOpen} onOpenChange={setCommentsOpen}>
         <DialogContent className="max-h-[80vh] overflow-y-auto rounded-[26px] sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl font-black">The conversation</DialogTitle>
-            <DialogDescription>{look.comments.length} people are talking about this look.</DialogDescription>
+            <DialogTitle className="font-display text-xl font-black">
+              The conversation
+            </DialogTitle>
+            <DialogDescription>
+              {look.comments.length} people are talking about this look.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
             {look.comments.length ? (
               look.comments.map((comment, index) => (
                 <div className="flex gap-3" key={`${comment.name}-${index}`}>
                   <Avatar>
-                    {comment.avatar && <AvatarImage alt={comment.name} src={comment.avatar} />}
+                    {comment.avatar && (
+                      <AvatarImage alt={comment.name} src={comment.avatar} />
+                    )}
                     <AvatarFallback>{comment.name[0]}</AvatarFallback>
                   </Avatar>
                   <div className="rounded-2xl rounded-tl-sm bg-secondary px-4 py-3 text-sm">
                     <strong>{comment.name}</strong>
-                    <p className="mt-0.5 text-muted-foreground">{comment.text}</p>
+                    <p className="mt-0.5 text-muted-foreground">
+                      {comment.text}
+                    </p>
                   </div>
                 </div>
               ))
@@ -767,7 +841,11 @@ export default function Home() {
               placeholder="Add to the conversation…"
               value={commentText}
             />
-            <Button aria-label="Post comment" className="size-11 rounded-full" size="icon">
+            <Button
+              aria-label="Post comment"
+              className="size-11 rounded-full"
+              size="icon"
+            >
               <Send className="size-4" />
             </Button>
           </form>
@@ -783,21 +861,33 @@ export default function Home() {
             <DialogTitle className="font-display text-2xl font-black tracking-tight">
               Pin today’s look
             </DialogTitle>
-            <DialogDescription>Give the city a little context, then drop it on the map.</DialogDescription>
+            <DialogDescription>
+              Give the city a little context, then drop it on the map.
+            </DialogDescription>
           </DialogHeader>
           <form className="space-y-4" onSubmit={createPost}>
             <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-foreground/25 bg-secondary/50 p-4 transition hover:border-primary">
               <span className="flex size-11 items-center justify-center rounded-full bg-card">
-                {postImage ? <Check className="size-5 text-primary" /> : <ImagePlus className="size-5" />}
+                {postImage ? (
+                  <Check className="size-5 text-primary" />
+                ) : (
+                  <ImagePlus className="size-5" />
+                )}
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-bold">{postImage ? postImage.name : 'Choose your photo'}</span>
-                <span className="block text-xs text-muted-foreground">Portrait photos work best</span>
+                <span className="block text-sm font-bold">
+                  {postImage ? postImage.name : 'Choose your photo'}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  Portrait photos work best
+                </span>
               </span>
               <Input
                 accept="image/*"
                 className="sr-only"
-                onChange={(event) => setPostImage(event.target.files?.[0] || null)}
+                onChange={(event) =>
+                  setPostImage(event.target.files?.[0] || null)
+                }
                 type="file"
               />
             </label>
@@ -814,7 +904,10 @@ export default function Home() {
               />
             </div>
             <div>
-              <label className="mb-2 block text-xs font-bold" htmlFor="location">
+              <label
+                className="mb-2 block text-xs font-bold"
+                htmlFor="location"
+              >
                 Where was this?
               </label>
               <div className="relative">
@@ -840,7 +933,9 @@ export default function Home() {
                   >
                     <Star
                       className={`size-6 ${
-                        value <= locationRating ? 'fill-primary text-primary' : 'text-muted-foreground'
+                        value <= locationRating
+                          ? 'fill-primary text-primary'
+                          : 'text-muted-foreground'
                       }`}
                     />
                   </button>
@@ -848,7 +943,10 @@ export default function Home() {
               </div>
             </div>
             <DialogFooter className="-mx-4 mt-6 rounded-b-[28px]">
-              <Button className="h-11 w-full rounded-full font-black sm:w-auto" type="submit">
+              <Button
+                className="h-11 w-full rounded-full font-black sm:w-auto"
+                type="submit"
+              >
                 Drop the pin <MapPin className="size-4" />
               </Button>
             </DialogFooter>
@@ -859,12 +957,20 @@ export default function Home() {
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
         <DialogContent className="rounded-[26px] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl font-black">Find your scene</DialogTitle>
-            <DialogDescription>Jump to a neighborhood with fresh style pins.</DialogDescription>
+            <DialogTitle className="font-display text-xl font-black">
+              Find your scene
+            </DialogTitle>
+            <DialogDescription>
+              Jump to a neighborhood with fresh style pins.
+            </DialogDescription>
           </DialogHeader>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input autoFocus className="h-11 rounded-full bg-secondary pl-9" placeholder="Neighborhood or place" />
+            <Input
+              autoFocus
+              className="h-11 rounded-full bg-secondary pl-9"
+              placeholder="Neighborhood or place"
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             {looks.map((item, index) => (
@@ -878,7 +984,9 @@ export default function Home() {
                 }}
               >
                 <span className="block text-sm font-bold">{item.area}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">{item.location}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {item.location}
+                </span>
               </button>
             ))}
           </div>
@@ -948,7 +1056,11 @@ function MapSurface({
                   : 'size-14 border-white'
               }`}
             >
-              <img alt="" className="h-full w-full object-cover" src={item.image} />
+              <img
+                alt=""
+                className="h-full w-full object-cover"
+                src={item.image}
+              />
             </span>
             <span className="mx-auto -mt-1 block w-max rounded-full bg-foreground px-2 py-1 text-[9px] font-black text-background">
               {item.placeRating.toFixed(1)}
@@ -957,17 +1069,26 @@ function MapSurface({
         ))}
 
         <div className="absolute inset-x-4 bottom-4 flex items-center gap-3 rounded-[22px] bg-card/95 p-3 shadow-xl backdrop-blur sm:inset-x-6 sm:p-4">
-          <img alt="" className="size-14 rounded-2xl object-cover sm:size-16" src={looks[selectedIndex % looks.length].image} />
+          <img
+            alt=""
+            className="size-14 rounded-2xl object-cover sm:size-16"
+            src={looks[selectedIndex % looks.length].image}
+          />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-black">{looks[selectedIndex % looks.length].location}</p>
+            <p className="truncate text-sm font-black">
+              {looks[selectedIndex % looks.length].location}
+            </p>
             <p className="truncate text-xs text-muted-foreground">
-              {looks[selectedIndex % looks.length].area} · {looks[selectedIndex % looks.length].pins} pins
+              {looks[selectedIndex % looks.length].area} ·{' '}
+              {looks[selectedIndex % looks.length].pins} pins
             </p>
           </div>
           <Button
             aria-label="Previous map pin"
             className="rounded-full"
-            onClick={() => onSelect((selectedIndex - 1 + looks.length) % looks.length)}
+            onClick={() =>
+              onSelect((selectedIndex - 1 + looks.length) % looks.length)
+            }
             size="icon"
             variant="outline"
           >
@@ -1023,8 +1144,12 @@ function PlaceCard({
         </p>
         <div className="mt-2 flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl font-black tracking-tight">{look.location}</h2>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{look.placeNote}</p>
+            <h2 className="font-display text-xl font-black tracking-tight">
+              {look.location}
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {look.placeNote}
+            </p>
           </div>
           <span className="rounded-full bg-primary/20 px-2.5 py-1 text-xs font-black text-foreground">
             {look.placeRating.toFixed(1)}
@@ -1032,15 +1157,23 @@ function PlaceCard({
         </div>
         <div className="mt-4 border-t border-border pt-4">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">{look.pins} style pins</span>
+            <span className="text-xs text-muted-foreground">
+              {look.pins} style pins
+            </span>
             <span className="text-[10px] font-bold">Rate this spot</span>
           </div>
           <div className="flex gap-1.5">
             {[1, 2, 3, 4, 5].map((value) => (
-              <button aria-label={`Rate this location ${value} out of 5`} key={value} onClick={() => onLocationRate(value)}>
+              <button
+                aria-label={`Rate this location ${value} out of 5`}
+                key={value}
+                onClick={() => onLocationRate(value)}
+              >
                 <Star
                   className={`size-[18px] ${
-                    value <= locationRating ? 'fill-primary text-primary' : 'text-muted-foreground'
+                    value <= locationRating
+                      ? 'fill-primary text-primary'
+                      : 'text-muted-foreground'
                   }`}
                 />
               </button>
@@ -1067,7 +1200,10 @@ function CommentSection({
 }) {
   return (
     <section className="rounded-[26px] border border-border bg-card p-5">
-      <button className="mb-4 flex w-full items-center justify-between" onClick={onOpen}>
+      <button
+        className="mb-4 flex w-full items-center justify-between"
+        onClick={onOpen}
+      >
         <span className="flex items-center gap-2">
           <MessageCircle className="size-4" />
           <span className="text-sm font-bold">Conversation</span>
@@ -1078,7 +1214,9 @@ function CommentSection({
         {comments.slice(0, 2).map((comment, index) => (
           <div className="flex gap-3" key={`${comment.name}-${index}`}>
             <Avatar size="sm">
-              {comment.avatar && <AvatarImage alt={comment.name} src={comment.avatar} />}
+              {comment.avatar && (
+                <AvatarImage alt={comment.name} src={comment.avatar} />
+              )}
               <AvatarFallback>{comment.name[0]}</AvatarFallback>
             </Avatar>
             <p className="text-xs leading-relaxed">
@@ -1088,7 +1226,10 @@ function CommentSection({
           </div>
         ))}
       </div>
-      <form className="mt-5 flex items-center rounded-full bg-secondary pl-4" onSubmit={onSubmit}>
+      <form
+        className="mt-5 flex items-center rounded-full bg-secondary pl-4"
+        onSubmit={onSubmit}
+      >
         <input
           aria-label="Add a comment"
           className="min-w-0 flex-1 bg-transparent py-2.5 text-xs outline-none placeholder:text-muted-foreground"
@@ -1096,7 +1237,11 @@ function CommentSection({
           placeholder="Add a comment"
           value={commentText}
         />
-        <button aria-label="Post comment" className="flex size-9 items-center justify-center" type="submit">
+        <button
+          aria-label="Post comment"
+          className="flex size-9 items-center justify-center"
+          type="submit"
+        >
           <Send className="size-3.5" />
         </button>
       </form>

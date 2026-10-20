@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import {
+  index,
   integer,
+  primaryKey,
   sqliteTable,
   text,
   uniqueIndex,
@@ -33,4 +35,23 @@ export const profiles = sqliteTable(
       .default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [uniqueIndex('profiles_username_unique').on(table.username)],
+);
+
+export const follows = sqliteTable(
+  'follows',
+  {
+    followerUserId: text('follower_user_id')
+      .notNull()
+      .references(() => profiles.userId, { onDelete: 'cascade' }),
+    followedUserId: text('followed_user_id')
+      .notNull()
+      .references(() => profiles.userId, { onDelete: 'cascade' }),
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    primaryKey({ columns: [table.followerUserId, table.followedUserId] }),
+    index('follows_followed_user_idx').on(table.followedUserId),
+  ],
 );

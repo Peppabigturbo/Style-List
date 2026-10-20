@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 
 import {
   chatGPTSignInPath,
@@ -6,7 +6,7 @@ import {
   getChatGPTUser,
 } from '@/app/chatgpt-auth';
 import { getDb } from '@/db';
-import { profiles } from '@/db/schema';
+import { follows, profiles } from '@/db/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,9 +46,26 @@ export async function GET() {
       .where(eq(profiles.userId, user.userId))
       .limit(1);
 
+    const [[followerCount], [followingCount]] = profile
+      ? await Promise.all([
+          db
+            .select({ value: count() })
+            .from(follows)
+            .where(eq(follows.followedUserId, user.userId)),
+          db
+            .select({ value: count() })
+            .from(follows)
+            .where(eq(follows.followerUserId, user.userId)),
+        ])
+      : [[{ value: 0 }], [{ value: 0 }]];
+
     return Response.json({
       user: { email: user.email, displayName: user.displayName },
       profile: profile ? serializeProfile(profile) : null,
+      social: {
+        followers: Number(followerCount?.value ?? 0),
+        following: Number(followingCount?.value ?? 0),
+      },
       signOutPath: chatGPTSignOutPath('/'),
     });
   } catch (error) {

@@ -13,8 +13,8 @@ import {
   MapPin,
   ShieldCheck,
   Sparkles,
-  Star,
   UserRound,
+  UsersRound,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -35,6 +35,8 @@ type AccountProfile = {
   createdAt: string;
 };
 
+type SocialCounts = { followers: number; following: number };
+
 const profileImage =
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=500&q=88';
 
@@ -49,6 +51,10 @@ export default function AccountPage() {
   );
   const [authenticated, setAuthenticated] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [social, setSocial] = useState<SocialCounts>({
+    followers: 0,
+    following: 0,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +65,7 @@ export default function AccountPage() {
           profile?: AccountProfile | null;
           signInPath?: string;
           signOutPath?: string;
+          social?: SocialCounts;
           error?: string;
         };
         if (cancelled) return;
@@ -72,6 +79,7 @@ export default function AccountPage() {
 
         setAuthenticated(true);
         setProfile(result.profile ?? null);
+        if (result.social) setSocial(result.social);
         if (result.signOutPath) setSignOutPath(result.signOutPath);
       })
       .catch((error) => {
@@ -278,23 +286,41 @@ export default function AccountPage() {
                 )}
               </div>
             </div>
-            <Button
-              className="h-11 rounded-full px-5 font-black"
-              onClick={() => window.location.assign('/')}
-            >
-              Explore looks
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                className="h-11 rounded-full px-5 font-black"
+                onClick={() => window.location.assign('/people')}
+              >
+                Find people <UsersRound className="size-4" />
+              </Button>
+              <Button
+                className="h-11 rounded-full px-5 font-black"
+                onClick={() => window.location.assign('/')}
+                variant="outline"
+              >
+                Explore looks
+              </Button>
+            </div>
           </div>
         </section>
 
         <section
-          className="mt-5 grid grid-cols-3 gap-2 sm:gap-4"
+          className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4"
           aria-label="Account activity"
         >
           {[
             { label: 'Looks', value: '0', icon: Compass },
+            {
+              label: 'Followers',
+              value: String(social.followers),
+              icon: UsersRound,
+            },
+            {
+              label: 'Following',
+              value: String(social.following),
+              icon: UserRound,
+            },
             { label: 'Saved', value: '0', icon: Bookmark },
-            { label: 'Ratings', value: '0', icon: Star },
           ].map(({ label, value, icon: Icon }) => (
             <div
               className="rounded-[22px] border border-border bg-card p-4 sm:p-5"
