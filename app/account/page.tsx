@@ -184,13 +184,13 @@ export default function AccountPage() {
               >
                 Create account <Sparkles className="size-4" />
               </Button>
-              <Button
-                className="h-12 rounded-full px-7 font-black"
-                onClick={() => window.location.assign('/')}
-                variant="outline"
+              <Link
+                className="inline-flex h-12 items-center justify-center rounded-full border border-input bg-background px-7 text-sm font-black shadow-xs transition hover:bg-accent hover:text-accent-foreground"
+                href="/"
+                target="_top"
               >
-                Back to discover
-              </Button>
+                Back to discovery
+              </Link>
             </div>
           </div>
         </section>
@@ -254,8 +254,9 @@ export default function AccountPage() {
         <Link
           className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-muted-foreground transition hover:text-foreground"
           href="/"
+          target="_top"
         >
-          <ArrowLeft className="size-4" /> Back to discover
+          <ArrowLeft className="size-4" /> Back to discovery
         </Link>
 
         <section className="relative overflow-hidden rounded-[32px] bg-foreground px-6 py-8 text-background sm:px-10 sm:py-10">
