@@ -35,7 +35,7 @@ type AccountProfile = {
   createdAt: string;
 };
 
-type SocialCounts = { followers: number; following: number };
+type ActivityCounts = { looks: number; followers: number; following: number };
 
 const profileImage =
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=500&q=88';
@@ -51,7 +51,8 @@ export default function AccountPage() {
   );
   const [authenticated, setAuthenticated] = useState(false);
   const [loadError, setLoadError] = useState('');
-  const [social, setSocial] = useState<SocialCounts>({
+  const [activity, setActivity] = useState<ActivityCounts>({
+    looks: 0,
     followers: 0,
     following: 0,
   });
@@ -65,7 +66,7 @@ export default function AccountPage() {
           profile?: AccountProfile | null;
           signInPath?: string;
           signOutPath?: string;
-          social?: SocialCounts;
+          activity?: ActivityCounts;
           error?: string;
         };
         if (cancelled) return;
@@ -79,7 +80,7 @@ export default function AccountPage() {
 
         setAuthenticated(true);
         setProfile(result.profile ?? null);
-        if (result.social) setSocial(result.social);
+        if (result.activity) setActivity(result.activity);
         if (result.signOutPath) setSignOutPath(result.signOutPath);
       })
       .catch((error) => {
@@ -309,15 +310,15 @@ export default function AccountPage() {
           aria-label="Account activity"
         >
           {[
-            { label: 'Looks', value: '0', icon: Compass },
+            { label: 'Looks', value: String(activity.looks), icon: Compass },
             {
               label: 'Followers',
-              value: String(social.followers),
+              value: String(activity.followers),
               icon: UsersRound,
             },
             {
               label: 'Following',
-              value: String(social.following),
+              value: String(activity.following),
               icon: UserRound,
             },
             { label: 'Saved', value: '0', icon: Bookmark },

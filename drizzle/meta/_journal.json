@@ -15,6 +15,13 @@
       "when": 1792457278128,
       "tag": "0001_rare_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792458017254,
+      "tag": "0002_narrow_mastermind",
+      "breakpoints": true
     }
   ]
 }

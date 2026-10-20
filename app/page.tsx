@@ -45,7 +45,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
 type Look = {
-  id: number;
+  id: string;
   author: string;
   handle: string;
   avatar: string;
@@ -65,7 +65,7 @@ type Look = {
 
 const INITIAL_LOOKS: Look[] = [
   {
-    id: 1,
+    id: 'editorial-1',
     author: 'Maya Chen',
     handle: '@mayawears',
     avatar:
@@ -104,7 +104,7 @@ const INITIAL_LOOKS: Look[] = [
     ],
   },
   {
-    id: 2,
+    id: 'editorial-2',
     author: 'Sloane Brooks',
     handle: '@sloaneb',
     avatar:
@@ -132,7 +132,7 @@ const INITIAL_LOOKS: Look[] = [
     ],
   },
   {
-    id: 3,
+    id: 'editorial-3',
     author: 'Dani Okafor',
     handle: '@danididit',
     avatar:
@@ -160,7 +160,7 @@ const INITIAL_LOOKS: Look[] = [
     ],
   },
   {
-    id: 4,
+    id: 'editorial-4',
     author: 'Leo Park',
     handle: '@leoparked',
     avatar:
@@ -202,7 +202,7 @@ export default function Home() {
   const [mode, setMode] = useState<'discover' | 'map'>('discover');
   const [dragX, setDragX] = useState(0);
   const [rating, setRating] = useState<number | null>(null);
-  const [saved, setSaved] = useState<number[]>([]);
+  const [saved, setSaved] = useState<string[]>([]);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -210,10 +210,12 @@ export default function Home() {
   const [locationRating, setLocationRating] = useState(0);
   const [toast, setToast] = useState('');
   const [postImage, setPostImage] = useState<File | null>(null);
+  const [postError, setPostError] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const dragStart = useRef<number | null>(null);
   const lastTouchTap = useRef(0);
-  const viewedLookIds = useRef<Set<number>>(new Set());
+  const viewedLookIds = useRef<Set<string>>(new Set());
 
   const look = looks[currentIndex % looks.length];
   const nextLook = looks[(currentIndex + 1) % looks.length];
@@ -221,6 +223,30 @@ export default function Home() {
     looks.length - (currentIndex % looks.length) - 1,
     0,
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetch('/api/looks', { cache: 'no-store' })
+      .then(async (response) => {
+        const result = (await response.json()) as {
+          looks?: Look[];
+          error?: string;
+        };
+        if (!response.ok) throw new Error(result.error);
+        if (!cancelled && result.looks?.length) {
+          setLooks([...result.looks, ...INITIAL_LOOKS]);
+          setCurrentIndex(0);
+        }
+      })
+      .catch(() => {
+        // Keep the editorial feed available if the live feed cannot load.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const viewedId = looks[currentIndex % looks.length]?.id;
@@ -324,44 +350,59 @@ export default function Home() {
     notify('Comment added');
   };
 
-  const createPost = (event: FormEvent<HTMLFormElement>) => {
+  const createPost = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const caption = String(data.get('caption') || 'A new look in the city.');
-    const location = String(data.get('location') || 'New York City');
-    const newLook: Look = {
-      id: Date.now(),
-      author: 'You',
-      handle: '@yourstyle',
-      avatar:
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
-      image: postImage
-        ? URL.createObjectURL(postImage)
-        : 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=88',
-      caption,
-      outfit: [
-        'Statement outer layer — add the label',
-        'Main piece — add the label',
-        'Shoes — add the label',
-        'Accessories — add the label',
-      ],
-      area: location.split(',')[0],
-      location,
-      distance: 'Your pin',
-      placeNote: 'A fresh style spot, added by you.',
-      placeRating: locationRating || 5,
-      pins: 1,
-      views: 0,
-      accent: '#d8ff4f',
-      comments: [],
-    };
-    setLooks((items) => [...items, newLook]);
-    setCurrentIndex(looks.length);
-    setMode('discover');
-    setPostOpen(false);
-    setPostImage(null);
-    notify('Your look is live on the map');
-    event.currentTarget.reset();
+    const form = event.currentTarget;
+    setPostError('');
+    if (!postImage) {
+      setPostError('Choose a photo to post.');
+      return;
+    }
+
+    const data = new FormData(form);
+    data.set('image', postImage);
+    data.set('rating', String(locationRating || 5));
+    setIsPosting(true);
+
+    try {
+      const response = await fetch('/api/looks', {
+        method: 'POST',
+        body: data,
+      });
+      const result = (await response.json()) as {
+        look?: Look;
+        error?: string;
+        signInPath?: string;
+        needsProfile?: boolean;
+      };
+
+      if (response.status === 401 && result.signInPath) {
+        window.location.assign(result.signInPath);
+        return;
+      }
+      if (response.status === 409 && result.needsProfile) {
+        window.location.assign('/signup');
+        return;
+      }
+      if (!response.ok || !result.look) {
+        throw new Error(result.error || 'Unable to publish your look.');
+      }
+
+      setLooks((items) => [result.look as Look, ...items]);
+      setCurrentIndex(0);
+      setMode('discover');
+      setPostOpen(false);
+      setPostImage(null);
+      setLocationRating(0);
+      notify('Your look is stored and live on the map');
+      form.reset();
+    } catch (error) {
+      setPostError(
+        error instanceof Error ? error.message : 'Unable to publish your look.',
+      );
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const selectMapLook = (index: number) => {
@@ -879,15 +920,25 @@ export default function Home() {
                   {postImage ? postImage.name : 'Choose your photo'}
                 </span>
                 <span className="block text-xs text-muted-foreground">
-                  Portrait photos work best
+                  JPEG, PNG, or WebP · 8 MB max
                 </span>
               </span>
               <Input
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 className="sr-only"
-                onChange={(event) =>
-                  setPostImage(event.target.files?.[0] || null)
-                }
+                name="image"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  setPostError('');
+                  if (file && file.size > 8 * 1024 * 1024) {
+                    setPostImage(null);
+                    setPostError('Photos must be 8 MB or smaller.');
+                    event.currentTarget.value = '';
+                    return;
+                  }
+                  setPostImage(file);
+                }}
+                required
                 type="file"
               />
             </label>
@@ -942,12 +993,19 @@ export default function Home() {
                 ))}
               </div>
             </div>
+            {postError && (
+              <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm font-bold text-destructive">
+                {postError}
+              </p>
+            )}
             <DialogFooter className="-mx-4 mt-6 rounded-b-[28px]">
               <Button
                 className="h-11 w-full rounded-full font-black sm:w-auto"
+                disabled={isPosting}
                 type="submit"
               >
-                Drop the pin <MapPin className="size-4" />
+                {isPosting ? 'Publishing…' : 'Drop the pin'}{' '}
+                <MapPin className="size-4" />
               </Button>
             </DialogFooter>
           </form>

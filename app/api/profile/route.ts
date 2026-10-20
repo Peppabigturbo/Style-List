@@ -6,7 +6,7 @@ import {
   getChatGPTUser,
 } from '@/app/chatgpt-auth';
 import { getDb } from '@/db';
-import { follows, profiles } from '@/db/schema';
+import { follows, looks, profiles } from '@/db/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +46,7 @@ export async function GET() {
       .where(eq(profiles.userId, user.userId))
       .limit(1);
 
-    const [[followerCount], [followingCount]] = profile
+    const [[followerCount], [followingCount], [lookCount]] = profile
       ? await Promise.all([
           db
             .select({ value: count() })
@@ -56,13 +56,22 @@ export async function GET() {
             .select({ value: count() })
             .from(follows)
             .where(eq(follows.followerUserId, user.userId)),
+          db
+            .select({ value: count() })
+            .from(looks)
+            .where(eq(looks.userId, user.userId)),
         ])
-      : [[{ value: 0 }], [{ value: 0 }]];
+      : [[{ value: 0 }], [{ value: 0 }], [{ value: 0 }]];
 
     return Response.json({
       user: { email: user.email, displayName: user.displayName },
       profile: profile ? serializeProfile(profile) : null,
       social: {
+        followers: Number(followerCount?.value ?? 0),
+        following: Number(followingCount?.value ?? 0),
+      },
+      activity: {
+        looks: Number(lookCount?.value ?? 0),
         followers: Number(followerCount?.value ?? 0),
         following: Number(followingCount?.value ?? 0),
       },
