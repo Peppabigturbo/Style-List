@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1792455129121,
+      "tag": "0000_worthless_star_brand",
+      "breakpoints": true
+    }
+  ]
+}
