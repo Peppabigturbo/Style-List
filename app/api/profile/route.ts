@@ -34,9 +34,12 @@ const ALLOWED_INTERESTS = new Set([
   'Sustainable',
 ]);
 
-export async function GET() {
+export async function GET(request: Request) {
   const user = await getChatGPTUser();
-  if (!user) return unauthenticated('/account');
+  if (!user) {
+    const returnTo = new URL(request.url).searchParams.get('return_to');
+    return unauthenticated(returnTo === '/' ? '/' : '/account');
+  }
 
   try {
     const db = getDb();

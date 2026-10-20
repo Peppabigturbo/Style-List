@@ -17,6 +17,7 @@ import {
   Eye,
   Heart,
   ImagePlus,
+  LogIn,
   Map,
   MapPin,
   MessageCircle,
@@ -62,6 +63,16 @@ type Look = {
   accent: string;
   comments: { name: string; text: string; avatar?: string }[];
 };
+
+type HomeAuthState =
+  | { status: 'loading' }
+  | { status: 'anonymous'; signInPath: string }
+  | {
+      status: 'authenticated';
+      displayName: string;
+      username: string | null;
+      initials: string;
+    };
 
 const INITIAL_LOOKS: Look[] = [
   {
@@ -213,6 +224,7 @@ export default function Home() {
   const [postError, setPostError] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [auth, setAuth] = useState<HomeAuthState>({ status: 'loading' });
   const dragStart = useRef<number | null>(null);
   const lastTouchTap = useRef(0);
   const viewedLookIds = useRef<Set<string>>(new Set());
@@ -241,6 +253,64 @@ export default function Home() {
       })
       .catch(() => {
         // Keep the editorial feed available if the live feed cannot load.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetch('/api/profile?return_to=/', { cache: 'no-store' })
+      .then(async (response) => {
+        const result = (await response.json()) as {
+          user?: { displayName?: string; email?: string };
+          profile?: {
+            username: string;
+            firstName: string;
+            lastName: string;
+          } | null;
+          signInPath?: string;
+        };
+        if (cancelled) return;
+        if (response.status === 401) {
+          setAuth({
+            status: 'anonymous',
+            signInPath:
+              result.signInPath ?? '/signin-with-chatgpt?return_to=%2F',
+          });
+          return;
+        }
+        if (!response.ok || !result.user) {
+          throw new Error('Unable to load account state.');
+        }
+
+        const displayName = result.profile
+          ? `${result.profile.firstName} ${result.profile.lastName}`.trim()
+          : result.user.displayName || result.user.email || 'Your account';
+        const initials = displayName
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((part) => part[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase();
+        setAuth({
+          status: 'authenticated',
+          displayName,
+          username: result.profile?.username ?? null,
+          initials: initials || 'YO',
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuth({
+            status: 'anonymous',
+            signInPath: '/signin-with-chatgpt?return_to=%2F',
+          });
+        }
       });
 
     return () => {
@@ -478,18 +548,38 @@ export default function Home() {
             >
               <Search className="size-[18px]" />
             </Button>
-            <button
-              aria-label="Open your account"
-              onClick={() => window.location.assign('/account')}
-            >
-              <Avatar className="size-9 ring-2 ring-background">
-                <AvatarImage
-                  alt="Your profile"
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80"
-                />
-                <AvatarFallback>YS</AvatarFallback>
-              </Avatar>
-            </button>
+            {auth.status === 'anonymous' ? (
+              <a
+                className="inline-flex h-9 items-center gap-2 rounded-full bg-foreground px-4 text-xs font-black text-background transition hover:opacity-85"
+                href={auth.signInPath}
+                target="_top"
+              >
+                Sign in <LogIn className="size-3.5" />
+              </a>
+            ) : auth.status === 'authenticated' ? (
+              <button
+                aria-label={`Open ${auth.displayName}'s account`}
+                className="flex items-center gap-2"
+                onClick={() => window.location.assign('/account')}
+              >
+                <span className="hidden text-right sm:block">
+                  <span className="block text-xs font-black leading-none">
+                    {auth.displayName}
+                  </span>
+                  <span className="mt-1 block text-[10px] text-muted-foreground">
+                    {auth.username ? `@${auth.username}` : 'Complete profile'}
+                  </span>
+                </span>
+                <Avatar className="size-9 ring-2 ring-primary/30">
+                  <AvatarFallback>{auth.initials}</AvatarFallback>
+                </Avatar>
+              </button>
+            ) : (
+              <span
+                aria-label="Checking sign-in status"
+                className="size-9 animate-pulse rounded-full bg-secondary"
+              />
+            )}
           </div>
         </div>
       </header>

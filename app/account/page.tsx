@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { type SyntheticEvent, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   AtSign,
@@ -11,6 +11,8 @@ import {
   EyeOff,
   LogOut,
   MapPin,
+  Pencil,
+  Save,
   ShieldCheck,
   Sparkles,
   UserRound,
@@ -20,12 +22,24 @@ import Link from 'next/link';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 type AccountProfile = {
   email: string;
   username: string;
   firstName: string;
   lastName: string;
+  birthDate: string;
   city: string;
   state: string;
   country: string;
@@ -36,6 +50,17 @@ type AccountProfile = {
 };
 
 type ActivityCounts = { looks: number; followers: number; following: number };
+
+const styleInterests = [
+  'Streetwear',
+  'Minimal',
+  'Vintage',
+  'Luxury',
+  'Sneakers',
+  'Workwear',
+  'Avant-garde',
+  'Sustainable',
+];
 
 const profileImage =
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=500&q=88';
@@ -56,6 +81,13 @@ export default function AccountPage() {
     followers: 0,
     following: 0,
   });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editInterests, setEditInterests] = useState<string[]>([]);
+  const [editDiscoverable, setEditDiscoverable] = useState(true);
+  const [editUpdatesAccepted, setEditUpdatesAccepted] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileNotice, setProfileNotice] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +132,76 @@ export default function AccountPage() {
       cancelled = true;
     };
   }, []);
+
+  const openProfileEditor = () => {
+    if (!profile) return;
+    setEditInterests(profile.interests);
+    setEditDiscoverable(profile.discoverable);
+    setEditUpdatesAccepted(profile.updatesAccepted);
+    setEditError('');
+    setEditOpen(true);
+  };
+
+  const toggleEditInterest = (interest: string) => {
+    setEditInterests((items) =>
+      items.includes(interest)
+        ? items.filter((item) => item !== interest)
+        : [...items, interest],
+    );
+  };
+
+  const saveProfile = async (event: SyntheticEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    setSavingProfile(true);
+    setEditError('');
+
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          username: formText(data, 'username'),
+          firstName: formText(data, 'firstName'),
+          lastName: formText(data, 'lastName'),
+          birthDate: formText(data, 'birthDate'),
+          city: formText(data, 'city'),
+          state: formText(data, 'state'),
+          country: formText(data, 'country'),
+          interests: editInterests,
+          discoverable: editDiscoverable,
+          updatesAccepted: editUpdatesAccepted,
+        }),
+      });
+      const result = (await response.json()) as {
+        profile?: AccountProfile;
+        error?: string;
+        signInPath?: string;
+      };
+
+      if (response.status === 401 && result.signInPath) {
+        window.location.assign(result.signInPath);
+        return;
+      }
+      if (!response.ok || !result.profile) {
+        throw new Error(result.error || 'Unable to update your profile.');
+      }
+
+      setProfile(result.profile);
+      setEditOpen(false);
+      setProfileNotice('Profile updated');
+      window.setTimeout(() => setProfileNotice(''), 2600);
+    } catch (error) {
+      setEditError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to update your profile.',
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   if (!ready) {
     return (
@@ -291,7 +393,14 @@ export default function AccountPage() {
             <div className="flex flex-wrap gap-2">
               <Button
                 className="h-11 rounded-full px-5 font-black"
+                onClick={openProfileEditor}
+              >
+                Edit profile <Pencil className="size-4" />
+              </Button>
+              <Button
+                className="h-11 rounded-full px-5 font-black"
                 onClick={() => window.location.assign('/people')}
+                variant="outline"
               >
                 Find people <UsersRound className="size-4" />
               </Button>
@@ -418,8 +527,208 @@ export default function AccountPage() {
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={editOpen}
+        onOpenChange={(open) => {
+          if (!savingProfile) setEditOpen(open);
+        }}
+      >
+        <DialogContent className="max-h-[92vh] overflow-y-auto rounded-[28px] sm:max-w-2xl">
+          <DialogHeader>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
+              Account settings
+            </p>
+            <DialogTitle className="font-display text-3xl font-black tracking-[-0.05em]">
+              Edit your profile
+            </DialogTitle>
+            <DialogDescription>
+              Update how you appear across discovery, people, and your posted
+              looks. Your ChatGPT email stays private and cannot be changed
+              here.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-6" onSubmit={saveProfile}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <EditField
+                defaultValue={profile.firstName}
+                id="edit-first-name"
+                label="First name"
+                name="firstName"
+              />
+              <EditField
+                defaultValue={profile.lastName}
+                id="edit-last-name"
+                label="Last name"
+                name="lastName"
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <EditField
+                defaultValue={profile.username}
+                id="edit-username"
+                label="Username"
+                name="username"
+                pattern="[A-Za-z0-9._]{3,20}"
+              />
+              <EditField
+                defaultValue={profile.birthDate}
+                id="edit-birth-date"
+                label="Date of birth"
+                name="birthDate"
+                type="date"
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <EditField
+                defaultValue={profile.city}
+                id="edit-city"
+                label="City"
+                name="city"
+              />
+              <EditField
+                defaultValue={profile.state}
+                id="edit-state"
+                label="State / province"
+                name="state"
+              />
+              <EditField
+                defaultValue={profile.country}
+                id="edit-country"
+                label="Country"
+                name="country"
+              />
+            </div>
+
+            <div>
+              <Label className="mb-3">Style interests</Label>
+              <div className="flex flex-wrap gap-2">
+                {styleInterests.map((interest) => {
+                  const selected = editInterests.includes(interest);
+                  return (
+                    <button
+                      aria-pressed={selected}
+                      className={`rounded-full border px-3 py-2 text-xs font-bold transition ${
+                        selected
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border bg-card hover:border-foreground/30'
+                      }`}
+                      key={interest}
+                      onClick={() => toggleEditInterest(interest)}
+                      type="button"
+                    >
+                      {interest}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-4 rounded-2xl border border-border bg-secondary/45 p-4">
+              <SettingToggle
+                checked={editDiscoverable}
+                description="Let people find your profile and public looks."
+                label="Discoverable profile"
+                onCheckedChange={setEditDiscoverable}
+              />
+              <SettingToggle
+                checked={editUpdatesAccepted}
+                description="Receive occasional style and product updates."
+                label="Style updates"
+                onCheckedChange={setEditUpdatesAccepted}
+              />
+            </div>
+
+            {editError && (
+              <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm font-bold text-destructive">
+                {editError}
+              </p>
+            )}
+
+            <DialogFooter className="-mx-4 mt-6 rounded-b-[28px]">
+              <Button
+                className="h-11 rounded-full px-6 font-black"
+                disabled={savingProfile}
+                type="submit"
+              >
+                {savingProfile ? 'Saving…' : 'Save changes'}
+                <Save className="size-4" />
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {profileNotice && (
+        <output className="fixed left-1/2 top-20 z-[70] -translate-x-1/2 rounded-full bg-foreground px-4 py-2.5 text-xs font-bold text-background shadow-xl">
+          {profileNotice}
+        </output>
+      )}
     </main>
   );
+}
+
+function EditField({
+  id,
+  label,
+  name,
+  defaultValue,
+  pattern,
+  type = 'text',
+}: {
+  id: string;
+  label: string;
+  name: string;
+  defaultValue: string;
+  pattern?: string;
+  type?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        className="h-11 rounded-xl bg-background"
+        defaultValue={defaultValue}
+        id={id}
+        name={name}
+        pattern={pattern}
+        required
+        type={type}
+      />
+    </div>
+  );
+}
+
+function SettingToggle({
+  checked,
+  label,
+  description,
+  onCheckedChange,
+}: {
+  checked: boolean;
+  label: string;
+  description: string;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div>
+        <p className="text-sm font-black">{label}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Switch
+        aria-label={label}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+      />
+    </div>
+  );
+}
+
+function formText(data: FormData, key: string) {
+  const value = data.get(key);
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function Detail({
