@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import {
+  ArrowUpRight,
   Bookmark,
   Check,
   ChevronLeft,
@@ -351,7 +352,7 @@ export default function Home() {
 
   const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
     if (
-      (event.target as HTMLElement).closest('button, input, textarea, label')
+      (event.target as HTMLElement).closest('a, button, input, textarea, label')
     ) {
       dragStart.current = null;
       return;
@@ -659,7 +660,8 @@ export default function Home() {
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
                 onDoubleClick={(event) => {
-                  if ((event.target as HTMLElement).closest('button')) return;
+                  if ((event.target as HTMLElement).closest('a, button'))
+                    return;
                   setIsFlipped((value) => !value);
                 }}
                 style={{
@@ -783,17 +785,41 @@ export default function Home() {
                         <h2 className="mt-3 font-display text-2xl font-black tracking-[-0.04em] sm:text-3xl">
                           Get the look.
                         </h2>
-                        <ul className="mt-6 space-y-3">
-                          {look.outfit.map((item) => (
-                            <li
-                              className="flex gap-3 text-sm leading-relaxed"
-                              key={item}
-                            >
-                              <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        {look.outfit.length ? (
+                          <>
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              Tap an item to find it or a close match.
+                            </p>
+                            <ul className="mt-4 space-y-1.5">
+                              {look.outfit.map((item) => (
+                                <li key={item}>
+                                  <a
+                                    aria-label={`Find ${item}`}
+                                    className="group/item flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm leading-snug transition hover:border-border hover:bg-background/75 focus-visible:border-primary focus-visible:bg-background focus-visible:outline-none"
+                                    href={outfitSearchUrl(item)}
+                                    onClick={(event) => event.stopPropagation()}
+                                    onPointerDown={(event) =>
+                                      event.stopPropagation()
+                                    }
+                                    rel="noopener noreferrer"
+                                    target="_blank"
+                                  >
+                                    <span className="size-1.5 shrink-0 rounded-full bg-primary transition-transform group-hover/item:scale-125" />
+                                    <span className="min-w-0 flex-1">
+                                      {item}
+                                    </span>
+                                    <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground opacity-45 transition group-hover/item:-translate-y-0.5 group-hover/item:translate-x-0.5 group-hover/item:text-foreground group-hover/item:opacity-100" />
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : (
+                          <p className="mt-5 rounded-xl bg-secondary p-3 text-xs leading-relaxed text-muted-foreground">
+                            Item links will appear when outfit details are
+                            added.
+                          </p>
+                        )}
                         <div className="mt-auto hidden items-center gap-2 pt-5 text-[10px] font-bold text-muted-foreground sm:flex">
                           <span className="flex size-6 items-center justify-center rounded-full border border-border">
                             ↺
@@ -1155,6 +1181,10 @@ function formatViewCount(value: number) {
     notation: 'compact',
     maximumFractionDigits: 1,
   }).format(value);
+}
+
+function outfitSearchUrl(item: string) {
+  return `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(item)}`;
 }
 
 function MapSurface({
